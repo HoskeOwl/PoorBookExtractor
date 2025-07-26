@@ -62,11 +62,11 @@ func (impl *MainForm) removeFromResultList() {
 	selected := lst[0]
 	parent := impl.ResultList.Parent(selected)
 	if parent == "" {
-		children := impl.ResultList.Children(parent)
+		children := impl.ResultList.Children(selected)
 		if len(children) != 0 {
 			impl.ResultList.Delete(children)
 		}
-		impl.ResultList.Delete(parent)
+		impl.ResultList.Delete(selected)
 		return
 	}
 	impl.ResultList.Delete(selected)
