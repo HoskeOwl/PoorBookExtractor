@@ -1,14 +1,14 @@
 package main
 
 import (
-	"github.com/HoskeOwl/PoorBoockExtractor/internal/app"
-	ui "github.com/HoskeOwl/PoorBoockExtractor/internal/ui/tk"
+	"github.com/HoskeOwl/PoorBookExtractor/internal/app"
+	ui "github.com/HoskeOwl/PoorBookExtractor/internal/ui/tk"
 	"go.uber.org/zap"
 	_ "modernc.org/tk9.0/themes/azure"
 )
 
 func main() {
-	logger, err := zap.NewProduction()
+	logger, err := zap.NewDevelopment()
 	if err != nil {
 		panic(err)
 	}

@@ -4,11 +4,8 @@ import (
 	_ "embed"
 	"fmt"
 	"runtime"
-	"slices"
-	"strings"
 
-	"github.com/HoskeOwl/PoorBoockExtractor/internal/app"
-	"github.com/HoskeOwl/PoorBoockExtractor/internal/entities"
+	"github.com/HoskeOwl/PoorBookExtractor/internal/app"
 	"go.uber.org/zap"
 	. "modernc.org/tk9.0"
 	_ "modernc.org/tk9.0/themes/azure"
@@ -21,7 +18,6 @@ type MainForm struct {
 	Menubar    *MenuWidget
 	FindInput  *TEntryWidget
 	AuthorList *TTreeviewWidget
-	// ResultList *ListboxWidget
 	ResultList *TTreeviewWidget
 	Statusbar  *LabelWidget
 
@@ -50,9 +46,14 @@ func (impl *MainForm) CreateFind() *TFrameWidget {
 	fr := TFrame()
 	eVal := Textvariable("")
 	findInput := fr.TEntry(eVal)
+	Bind(findInput, "<Return>", Command(impl.findAuthor))
 	findLabel := fr.Label(Txt("Find"))
+	clearBtn := fr.Button(Txt("❌"), Width(1), Height(1), Command(impl.clearFind))
+	findBtn := fr.Button(Txt("🔍"), Width(1), Height(1), Command(impl.findAuthor))
 	Pack(findLabel, Side("left"))
 	Pack(findInput, Side("left"), Expand(true), Fill("x"))
+	Pack(findBtn, Side("right"), Expand(false), Fill("x"))
+	Pack(clearBtn, Side("right"), Expand(false), Fill("x"))
 	impl.FindInput = findInput
 	impl.FindValue = &eVal
 
@@ -70,29 +71,12 @@ func (impl *MainForm) CreateAuthorList() *TFrameWidget {
 	lv := fr.TTreeview(Selectmode("browse"), Height(30),
 		Yscrollcommand(func(e *Event) { e.ScrollSet(sb) }))
 
-	lv.Heading("#0", Txt("Авторы"), Anchor("center"))
-	lv.Column("#0", Width(320), Stretch(true), Separator(false))
+	lv.Heading("#0", Txt("Books by authors"), Anchor("center"))
+	lv.Column("#0", Width(500), Stretch(true), Separator(false))
 
 	Pack(lv, Expand(true), Fill("both"))
 	sb.Configure(Command(func(e *Event) { e.Yview(lv) }))
 	impl.AuthorList = lv
-
-	Bind(lv, "<<TreeviewSelect>>", Command(func() {
-		author := lv.Selection("")
-		impl.log.Debug("author selected", zap.Int("author", len(author)))
-		if len(author) == 0 {
-			return
-		}
-		impl.ResultList.Delete(impl.ResultList.Children(""))
-		books := impl.app.GetAuthorBooks(author[0])
-		slices.SortFunc(books, func(a, b entities.Book) int {
-			return strings.Compare(a.FullName(), b.FullName())
-		})
-		impl.log.Debug("book got", zap.Int("books", len(books)))
-		for _, book := range books {
-			impl.ResultList.Insert("", "end", Id(book.LibID), Txt(book.FullName()), Value(book.LibID))
-		}
-	}))
 
 	return fr
 }
@@ -100,15 +84,30 @@ func (impl *MainForm) CreateAuthorList() *TFrameWidget {
 func (impl *MainForm) CreateResultList() *TFrameWidget {
 	// Results
 	fr := TFrame()
+
+	// Additional frame for buttons
+	buttonFrame := fr.TFrame()
+	Pack(buttonFrame, Side("left"), Padx("2p"), Anchor("center"))
+
+	// Two small buttons
+	addBtn := buttonFrame.Button(Txt("➡"), Width(1), Height(1), Command(impl.addToResultList))
+	removeBtn := buttonFrame.Button(Txt("⬅"), Width(1), Height(1), Command(impl.removeFromResultList))
+	clearBtn := buttonFrame.Button(Txt("❌"), Width(1), Height(1), Command(impl.clearResultList))
+
+	// Pack buttons in the button frame, centered vertically
+	Pack(addBtn, Side("top"), Pady("1p"))
+	Pack(removeBtn, Side("top"), Pady("1p"))
+	Pack(clearBtn, Side("top"), Pady("1p"))
+
 	// Scrollbar
 	sb := fr.TScrollbar()
 	Pack(sb, Side("right"), Fill("both"))
 	// Listview
-	lv := fr.TTreeview(Selectmode("extended"), Height(30),
+	lv := fr.TTreeview(Selectmode("browse"), Height(30),
 		Yscrollcommand(func(e *Event) { e.ScrollSet(sb) }))
 
-	lv.Heading("#0", Txt("Книги"), Anchor("center"))
-	lv.Column("#0", Width(800), Stretch(true), Separator(false))
+	lv.Heading("#0", Txt("Books to exportk"), Anchor("center"))
+	lv.Column("#0", Width(600), Stretch(true), Separator(false))
 	Pack(lv, Expand(true), Fill("both"))
 	sb.Configure(Command(func(e *Event) { e.Yview(lv) }))
 	impl.ResultList = lv
@@ -126,7 +125,7 @@ func (impl *MainForm) CreateStatusbar() *TFrameWidget {
 }
 
 func (impl *MainForm) Wait() {
-	App.Wait()
+	App.Center().Wait()
 }
 
 func NewForm(logger *zap.Logger, app *app.App) *MainForm {
@@ -150,6 +149,7 @@ func NewForm(logger *zap.Logger, app *app.App) *MainForm {
 	App.WmTitle(fmt.Sprintf("%s on %s", App.WmTitle("FreeLibrary"), runtime.GOOS))
 	ActivateTheme("azure light")
 	App.Configure(Mnu(impl.Menubar), Width("150c"), Height("6c"))
+	App.WmTitle("PoorBookExtractor")
 
 	App.IconPhoto(NewPhoto(Data(ico)))
 

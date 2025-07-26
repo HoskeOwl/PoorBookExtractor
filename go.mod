@@ -1,11 +1,8 @@
-module github.com/HoskeOwl/PoorBoockExtractor
+module github.com/HoskeOwl/PoorBookExtractor
 
 go 1.24.3
 
-require (
-	golang.org/x/sync v0.14.0
-	modernc.org/tk9.0 v0.70.4
-)
+require modernc.org/tk9.0 v0.70.4
 
 require go.uber.org/multierr v1.10.0 // indirect
 

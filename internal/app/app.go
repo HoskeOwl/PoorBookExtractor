@@ -2,12 +2,16 @@ package app
 
 import (
 	"context"
+	"iter"
+	"path/filepath"
+	"strings"
 
-	"github.com/HoskeOwl/PoorBoockExtractor/internal/entities"
-	"github.com/HoskeOwl/PoorBoockExtractor/internal/logs"
-	"github.com/HoskeOwl/PoorBoockExtractor/internal/sources/inpx"
-	"github.com/HoskeOwl/PoorBoockExtractor/internal/storage/memory"
+	"github.com/HoskeOwl/PoorBookExtractor/internal/entities"
+	"github.com/HoskeOwl/PoorBookExtractor/internal/logs"
+	"github.com/HoskeOwl/PoorBookExtractor/internal/sources/inpx"
+	"github.com/HoskeOwl/PoorBookExtractor/internal/storage/memory"
 	"go.uber.org/zap"
+	"golang.org/x/exp/slices"
 )
 
 type App struct {
@@ -17,16 +21,19 @@ type App struct {
 	log *zap.Logger
 }
 
-func (a *App) ExportBooks(book_ids []string, directory string) error {
-	books := a.storage.GetBooks(book_ids)
-	if len(books) == 0 {
-		a.log.Info("no books to export")
-		return nil
-	}
-	err := inpx.ExportBooks(directory, books)
-	if err != nil {
-		a.log.Error("error exporting books", zap.Error(err))
-		return err
+func (a *App) ExportBooks(bookIDsByAuthor map[string][]string, directory string) error {
+	for author, book_ids := range bookIDsByAuthor {
+		books := a.storage.GetBooks(book_ids)
+		if len(books) == 0 {
+			a.log.Info("no books to export")
+			return nil
+		}
+		err := inpx.ExportBooks(filepath.Join(directory, author), books)
+		if err != nil {
+			a.log.Error("error exporting books", zap.Error(err))
+			return err
+		}
+		a.log.Info("exported books", zap.String("author", author), zap.Int("count", len(books)))
 	}
 	return nil
 }
@@ -67,6 +74,16 @@ func (a *App) ClearStorage() {
 	a.storage.Clear()
 }
 
+func (a *App) IterBooksByAuthor() iter.Seq2[string, []entities.Book] {
+	return a.storage.IterBooksByAuthor()
+}
+
+func (a *App) SortBooks(books []entities.Book) {
+	slices.SortFunc(books, func(a, b entities.Book) int {
+		return strings.Compare(a.FullName(), b.FullName())
+	})
+}
+
 func (a *App) Export(path string, books []entities.Book) error {
 	if len(books) == 0 {
 		a.log.Debug("no books to export")
@@ -74,4 +91,16 @@ func (a *App) Export(path string, books []entities.Book) error {
 	}
 
 	return inpx.ExportBooks(path, books)
+}
+
+func (a *App) AuthorsLen() int {
+	return a.storage.AuthorsLen()
+}
+
+func (a *App) BooksLen() int {
+	return a.storage.BooksLen()
+}
+
+func (a *App) GetBook(libID string) (entities.Book, bool) {
+	return a.storage.GetBook(libID)
 }

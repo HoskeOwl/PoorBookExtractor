@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/HoskeOwl/PoorBoockExtractor/internal/entities"
-	"github.com/HoskeOwl/PoorBoockExtractor/internal/logs"
+	"github.com/HoskeOwl/PoorBookExtractor/internal/entities"
+	"github.com/HoskeOwl/PoorBookExtractor/internal/logs"
 	"go.uber.org/zap"
 )
 

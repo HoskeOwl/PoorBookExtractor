@@ -10,9 +10,9 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/HoskeOwl/PoorBoockExtractor/internal/entities"
-	"github.com/HoskeOwl/PoorBoockExtractor/internal/logs"
-	"github.com/HoskeOwl/PoorBoockExtractor/internal/sources/inp"
+	"github.com/HoskeOwl/PoorBookExtractor/internal/entities"
+	"github.com/HoskeOwl/PoorBookExtractor/internal/logs"
+	"github.com/HoskeOwl/PoorBookExtractor/internal/sources/inp"
 	"go.uber.org/zap"
 )
 

@@ -1,16 +1,17 @@
 package memory
 
 import (
+	"iter"
 	"maps"
 	"slices"
 	"strings"
 
-	"github.com/HoskeOwl/PoorBoockExtractor/internal/entities"
+	"github.com/HoskeOwl/PoorBookExtractor/internal/entities"
 )
 
 type MemoryStorage struct {
 	books    map[string]entities.Book
-	ByAuthor map[string][]entities.Book
+	byAuthor map[string][]entities.Book
 }
 
 func NewMemoryStorage(books []entities.Book) *MemoryStorage {
@@ -22,28 +23,28 @@ func NewMemoryStorage(books []entities.Book) *MemoryStorage {
 		}
 		booksMap[book.LibID] = book
 	}
-	return &MemoryStorage{books: booksMap, ByAuthor: byAuthor}
+	return &MemoryStorage{books: booksMap, byAuthor: byAuthor}
 }
 
 func (ms *MemoryStorage) AddBooks(books []entities.Book) {
 	for _, book := range books {
 		ms.books[book.LibID] = book
 		for _, author := range book.Authors {
-			ms.ByAuthor[author] = append(ms.ByAuthor[author], book)
+			ms.byAuthor[author] = append(ms.byAuthor[author], book)
 		}
 	}
 }
 
 func (ms *MemoryStorage) GetAuthors(value string) []string {
 	if value == "" {
-		keys := slices.Collect(maps.Keys(ms.ByAuthor))
+		keys := slices.Collect(maps.Keys(ms.byAuthor))
 		slices.Sort(keys)
 		return keys
 	}
 	value = strings.ToLower(value)
 	tokens := strings.Split(value, " ")
 	authors := make([]string, 0)
-	for author := range ms.ByAuthor {
+	for author := range ms.byAuthor {
 		lowerAuthor := strings.ToLower(author)
 		found := true
 		for _, token := range tokens {
@@ -59,7 +60,7 @@ func (ms *MemoryStorage) GetAuthors(value string) []string {
 }
 
 func (ms *MemoryStorage) GetAuthorBooks(author string) []entities.Book {
-	return ms.ByAuthor[author]
+	return ms.byAuthor[author]
 }
 
 func (ms *MemoryStorage) GetBooks(book_ids []string) []entities.Book {
@@ -76,5 +77,31 @@ func (ms *MemoryStorage) GetBooks(book_ids []string) []entities.Book {
 
 func (ms *MemoryStorage) Clear() {
 	ms.books = make(map[string]entities.Book)
-	ms.ByAuthor = make(map[string][]entities.Book)
+	ms.byAuthor = make(map[string][]entities.Book)
+}
+
+func (ms *MemoryStorage) IterBooksByAuthor() iter.Seq2[string, []entities.Book] {
+	return func(yield func(author string, book []entities.Book) bool) {
+		authors := slices.Collect(maps.Keys(ms.byAuthor))
+		slices.Sort(authors)
+		for _, author := range authors {
+			books := ms.byAuthor[author]
+			if !yield(author, books) {
+				return
+			}
+		}
+	}
+}
+
+func (ms *MemoryStorage) AuthorsLen() int {
+	return len(ms.byAuthor)
+}
+
+func (ms *MemoryStorage) BooksLen() int {
+	return len(ms.books)
+}
+
+func (ms *MemoryStorage) GetBook(libID string) (entities.Book, bool) {
+	book, ok := ms.books[libID]
+	return book, ok
 }

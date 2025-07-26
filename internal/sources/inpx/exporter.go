@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/HoskeOwl/PoorBoockExtractor/internal/entities"
+	"github.com/HoskeOwl/PoorBookExtractor/internal/entities"
 )
 
 var re = regexp.MustCompile(`[^\w\s\-а-яА-Я]+`)

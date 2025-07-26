@@ -2,6 +2,7 @@ package entities
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -33,4 +34,16 @@ func (b *Book) FullName() string {
 		b.fullName = fmt.Sprintf("%s %s %s %s %s %d", b.Lang, b.Date.Format(time.DateOnly), b.Title, b.Series, b.SeriesNumber, b.Size)
 	}
 	return b.fullName
+}
+
+func (b *Book) ExtendId(additional string) string {
+	return fmt.Sprintf("%s:%s", additional, b.LibID)
+}
+
+func GetBookIdFromExtended(extended string) string {
+	parts := strings.Split(extended, ":")
+	if len(parts) != 2 {
+		return extended
+	}
+	return parts[1]
 }
