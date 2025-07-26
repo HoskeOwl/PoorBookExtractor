@@ -6,8 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strconv"
-	"time"
 
 	"github.com/HoskeOwl/PoorBookExtractor/internal/entities"
 )
@@ -23,8 +21,7 @@ func createName(book entities.Book) string {
 	if len(name) == 0 {
 		name = book.Filename
 	}
-	timestamp := time.Now().Unix()
-	return name + "." + strconv.FormatInt(timestamp, 10) + "." + book.Ext
+	return name + "." + book.Ext
 }
 
 func exportBook(zipPath, outFileName string, books []entities.Book) error {
