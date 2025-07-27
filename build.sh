@@ -47,7 +47,7 @@ get_git_commit() {
 }
 
 get_build_time() {
-    date -u '+%Y-%m-%d %H:%M:%S UTC'
+    date -u '+%Y-%m-%d_%H:%M:%S_UTC'
 }
 
 VERSION=$(get_git_tag)
@@ -123,9 +123,7 @@ for build in "${filtered_builds[@]}"; do
     
     # Build the binary with version information
     env GOOS=$GOOS GOARCH=$GOARCH go build \
-        -ldflags "-X github.com/HoskeOwl/PoorBookExtractor/internal/version.Version=$VERSION \
-                  -X github.com/HoskeOwl/PoorBookExtractor/internal/version.CommitSHA=$COMMIT_SHA \
-                  -X github.com/HoskeOwl/PoorBookExtractor/internal/version.BuildTime='$BUILD_TIME'" \
+        -ldflags "-X github.com/HoskeOwl/PoorBookExtractor/internal/version.Version=$VERSION -X github.com/HoskeOwl/PoorBookExtractor/internal/version.CommitSHA=$COMMIT_SHA -X github.com/HoskeOwl/PoorBookExtractor/internal/version.BuildTime=\"$BUILD_TIME\"" \
         -o "$OUT_DIRECTORY/$BINARY_NAME" main.go
     
     # Check if build was successful
