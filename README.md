@@ -22,6 +22,9 @@
 
 ## 📦 Installation
 
+- Install TKCL into your system - [instructions](TKCL-README.md)
+- Run program
+
 ### Ready-to-use portable binary
 
 - Go to [release section](https://github.com/HoskeOwl/PoorBookExtractor/releases) and download executable file for you operation system.

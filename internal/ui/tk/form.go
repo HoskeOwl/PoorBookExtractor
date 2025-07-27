@@ -21,6 +21,9 @@ type MainForm struct {
 	ResultList *TTreeviewWidget
 	Statusbar  *LabelWidget
 
+	Alphabet        *TFrameWidget
+	AlphabetButtons []*ButtonWidget
+
 	FindValue *Opt
 
 	app *app.App
@@ -42,8 +45,9 @@ func (impl *MainForm) CreateMenubar() {
 }
 
 func (impl *MainForm) CreateFind() *TFrameWidget {
+	grp := TFrame()
 	// find
-	fr := TFrame()
+	fr := grp.TFrame()
 	eVal := Textvariable("")
 	findInput := fr.TEntry(eVal)
 	Bind(findInput, "<Return>", Command(impl.findAuthor))
@@ -57,7 +61,26 @@ func (impl *MainForm) CreateFind() *TFrameWidget {
 	impl.FindInput = findInput
 	impl.FindValue = &eVal
 
-	return fr
+	alphabet := grp.TFrame()
+	impl.Alphabet = alphabet
+	btn := alphabet.Button(Txt("A"), Width(1), Height(1), Command(func() { impl.findAuthor() }))
+	Pack(btn, Side("left"), Expand(false), Fill("x"))
+
+	Pack(fr, Side("top"), Expand(false), Fill("x"))
+	Pack(alphabet, Side("bottom"), Expand(false), Fill("x"))
+
+	return grp
+}
+
+func (impl *MainForm) CreateAlphabetButtons(alphabet string) {
+	for _, btn := range impl.AlphabetButtons {
+		Destroy(btn)
+	}
+	for _, letter := range alphabet {
+		btn := impl.Alphabet.Button(Txt(string(letter)), Width(1), Height(1), Command(func() { impl.findAuthor() }))
+		Pack(btn, Side("left"), Expand(false), Fill("x"))
+		impl.AlphabetButtons = append(impl.AlphabetButtons, btn)
+	}
 }
 
 func (impl *MainForm) CreateAuthorList() *TFrameWidget {

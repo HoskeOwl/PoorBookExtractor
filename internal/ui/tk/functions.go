@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/HoskeOwl/PoorBookExtractor/internal/entities"
 	"go.uber.org/zap"
@@ -50,6 +51,20 @@ func (impl *MainForm) findAuthor() {
 		impl.AuthorList.Insert("", "end", Id(author), Txt(author))
 		for _, book := range books {
 			impl.AuthorList.Insert(author, "end", Id(book.ExtendId(author)), Txt(book.FullName()))
+		}
+	}
+}
+
+func (impl *MainForm) listAuthors(letter rune) {
+	impl.AuthorList.Delete(impl.AuthorList.Children(""))
+	for author := range impl.app.IterByAuthors() {
+		if unicode.ToUpper(rune(author[0])) == letter {
+			impl.AuthorList.Insert("", "end", Id(author), Txt(author))
+			books := impl.app.GetAuthorBooks(author)
+			impl.app.SortBooks(books)
+			for _, book := range books {
+				impl.AuthorList.Insert(author, "end", Id(book.ExtendId(author)), Txt(book.FullName()))
+			}
 		}
 	}
 }
