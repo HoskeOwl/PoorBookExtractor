@@ -78,6 +78,8 @@ func (impl *MainForm) CreateAuthorList() *TFrameWidget {
 	sb.Configure(Command(func(e *Event) { e.Yview(lv) }))
 	impl.AuthorList = lv
 
+	Bind(lv, "<<TreeviewOpen>>", Command(impl.authorListOpen))
+
 	return fr
 }
 
@@ -106,7 +108,7 @@ func (impl *MainForm) CreateResultList() *TFrameWidget {
 	lv := fr.TTreeview(Selectmode("browse"), Height(30),
 		Yscrollcommand(func(e *Event) { e.ScrollSet(sb) }))
 
-	lv.Heading("#0", Txt("Books to exportk"), Anchor("center"))
+	lv.Heading("#0", Txt("Books to export"), Anchor("center"))
 	lv.Column("#0", Width(600), Stretch(true), Separator(false))
 	Pack(lv, Expand(true), Fill("both"))
 	sb.Configure(Command(func(e *Event) { e.Yview(lv) }))

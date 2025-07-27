@@ -12,6 +12,10 @@ import (
 	_ "modernc.org/tk9.0/themes/azure"
 )
 
+const (
+	EMPTY_ID = "@empty@"
+)
+
 func (impl *MainForm) updateStatus(text string) {
 	impl.Statusbar.Configure(Txt(text))
 }
@@ -23,13 +27,36 @@ func (impl *MainForm) clearLists() {
 
 func (impl *MainForm) refreshAuthorList() {
 	impl.AuthorList.Delete(impl.AuthorList.Children(""))
-	for author, books := range impl.app.IterBooksByAuthor() {
-		impl.app.SortBooks(books)
+	impl.updateStatus("Refreshing list...")
+	Update()
+	impl.AuthorList.Busy()
+	for _, author := range impl.app.GetAuthors("") {
 		impl.AuthorList.Insert("", "end", Id(author), Txt(author))
-		for _, book := range books {
-			impl.AuthorList.Insert(author, "end", Id(book.ExtendId(author)), Txt(book.FullName()))
+		emptyId := author + ":" + EMPTY_ID
+		impl.AuthorList.Insert(author, "end", Id(emptyId), Txt(emptyId))
+	}
+	impl.AuthorList.BusyForget()
+	impl.updateStatus("Refreshing list... done")
+	Update()
+}
+
+func (impl *MainForm) authorListOpen() {
+	author := impl.AuthorList.Focus()
+	if author != "" {
+		// Get the text of the opened item
+		emptyId := author + ":" + EMPTY_ID
+		children := impl.AuthorList.Children(author)
+		if len(children) > 0 && children[0] == emptyId {
+			impl.AuthorList.Delete(emptyId)
+			books := impl.app.GetAuthorBooks(author)
+			impl.app.SortBooks(books)
+			for _, book := range books {
+				impl.AuthorList.Insert(author, "end", Id(book.ExtendId(author)), Txt(book.FullName()))
+			}
+			Update()
 		}
 	}
+
 }
 
 func (impl *MainForm) clearFind() {

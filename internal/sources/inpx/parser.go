@@ -58,14 +58,14 @@ func (imp *InpxParser) readZip() (*zip.Reader, func() error, error) {
 	return zipReader, file.Close, nil
 }
 
-func (imp *InpxParser) Parse(ctx context.Context) ([]entities.Book, error) {
+func (imp *InpxParser) Parse(ctx context.Context) (map[string]entities.Book, error) {
 	log := logs.GetFromContext(ctx).With(zap.String("action", "parse_inpx"))
 	zipReader, closer, err := imp.readZip()
 	if err != nil {
 		return nil, err
 	}
 	defer closer()
-	books := make([]entities.Book, 0)
+	books := make(map[string]entities.Book)
 	// Read all the files from zip archive
 	for _, zipFile := range zipReader.File {
 		if !strings.HasSuffix(zipFile.Name, ".inp") {
@@ -77,17 +77,15 @@ func (imp *InpxParser) Parse(ctx context.Context) ([]entities.Book, error) {
 		if err != nil {
 			return nil, err
 		}
-		books, err = inp.ParseBooks(ctx, unzippedFileBytes)
+		metadata := entities.BookMetadata{
+			ArchiveName: zipFile.Name[:len(zipFile.Name)-3] + "zip",
+			Filepath:    filepath.Join(imp.path),
+		}
+		err = inp.ParseBooksWithMetadataInplace(ctx, unzippedFileBytes, metadata, books)
 		if err != nil {
 			return nil, err
 		}
-		for _, book := range books {
-			metadata := entities.BookMetadata{
-				ArchiveName: zipFile.Name,
-				Filepath:    filepath.Join(imp.path),
-			}
-			book.Metadata = metadata
-		}
+		log.Debug("books parsed:", zap.Int("count", len(books)))
 	}
 	return books, nil
 }
@@ -96,7 +94,7 @@ func getProgress(total int, current int) int32 {
 	return int32(float64(current) / float64(total) * 100)
 }
 
-func (imp *InpxParser) ParseSkipErrors(ctx context.Context) ([]entities.Book, error) {
+func (imp *InpxParser) ParseSkipErrors(ctx context.Context) (map[string]entities.Book, error) {
 	imp.progress.Store(0)
 	defer imp.progress.Store(100)
 
@@ -107,7 +105,7 @@ func (imp *InpxParser) ParseSkipErrors(ctx context.Context) ([]entities.Book, er
 	}
 	defer closer()
 	// Read all the files from zip archive
-	books := make([]entities.Book, 0)
+	books := make(map[string]entities.Book)
 	total := len(zipReader.File)
 	for idx, zipFile := range zipReader.File {
 		if !strings.HasSuffix(zipFile.Name, ".inp") {
@@ -117,19 +115,20 @@ func (imp *InpxParser) ParseSkipErrors(ctx context.Context) ([]entities.Book, er
 		log.Debug("reading file", zap.String("filename", zipFile.Name))
 		unzippedFileBytes, err := imp.readZipFile(zipFile)
 		if err != nil {
-			log.Error("error ")
+			log.Error("error reading file from archive", zap.Error(err))
 			continue
 		}
 		metadata := entities.BookMetadata{
 			ArchiveName: zipFile.Name[:len(zipFile.Name)-3] + "zip",
 			Filepath:    filepath.Join(imp.path),
 		}
-		books, err = inp.ParseBooksWithMetadata(ctx, unzippedFileBytes, metadata)
+		err = inp.ParseBooksWithMetadataInplace(ctx, unzippedFileBytes, metadata, books)
 		if err != nil {
 			return nil, err
 		}
 		imp.progress.Store(getProgress(total, idx+1))
 	}
+	log.Debug("books parsed:", zap.Int("count", len(books)))
 	return books, nil
 }
 
@@ -137,10 +136,12 @@ func (imp *InpxParser) GetProgress() int {
 	return int(imp.progress.Load())
 }
 
-func (imp *InpxParser) ParseBooks(ctx context.Context, path string) ([]entities.Book, error) {
+func (imp *InpxParser) ParseBooks(ctx context.Context, path string) (map[string]entities.Book, error) {
+	log := logs.GetFromContext(ctx).With(zap.String("action", "parse_inpx_skip_errors"))
 
 	path, err := filepath.Abs(path)
 	if err != nil {
+		log.Error("error getting absolute path", zap.Error(err))
 		return nil, err
 	}
 	dir := filepath.Dir(path)
@@ -151,7 +152,9 @@ func (imp *InpxParser) ParseBooks(ctx context.Context, path string) ([]entities.
 
 	books, err := imp.ParseSkipErrors(ctx)
 	if err != nil {
+		log.Error("error parsing books", zap.Error(err))
 		return nil, err
 	}
+	log.Debug("books parsed:", zap.Int("count", len(books)))
 	return books, nil
 }

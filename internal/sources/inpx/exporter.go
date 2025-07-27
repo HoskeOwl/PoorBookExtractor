@@ -12,7 +12,7 @@ import (
 
 var re = regexp.MustCompile(`[^\w\s\-а-яА-Я]+`)
 
-func createName(book entities.Book) string {
+func createName(book *entities.Book) string {
 	name := book.Title
 	if len(name) > 100 {
 		name = name[:100]
@@ -24,7 +24,7 @@ func createName(book entities.Book) string {
 	return name + "." + book.Ext
 }
 
-func exportBook(zipPath, outFileName string, books []entities.Book) error {
+func exportBook(zipPath, outFileName string, books []*entities.Book) error {
 	zipReader, err := zip.OpenReader(zipPath)
 	if err != nil {
 		return err
@@ -52,7 +52,7 @@ func exportBook(zipPath, outFileName string, books []entities.Book) error {
 	return nil
 }
 
-func ExportBooks(path string, books []entities.Book) error {
+func ExportBooks(path string, books []*entities.Book) error {
 	if len(books) == 0 {
 		return nil
 	}
@@ -60,7 +60,7 @@ func ExportBooks(path string, books []entities.Book) error {
 	if err != nil {
 		return err
 	}
-	bookByArchive := make(map[string][]entities.Book)
+	bookByArchive := make(map[string][]*entities.Book)
 	for _, book := range books {
 		bookByArchive[book.Metadata.ArchiveName] = append(bookByArchive[book.Metadata.ArchiveName], book)
 	}

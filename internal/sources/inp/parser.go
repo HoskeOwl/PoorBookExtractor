@@ -92,6 +92,7 @@ func parseBook(ctx context.Context, fields []string) (entities.Book, error) {
 	log := logs.GetFromContext(ctx)
 
 	if len(fields) < columnCount {
+		log.Error("not enough fields in book", zap.Int("count", len(fields)), zap.Strings("fields", fields))
 		return entities.Book{}, fmt.Errorf("not enough fields in book: %v", fields)
 	}
 	if len(fields) > columnCount {
@@ -126,30 +127,12 @@ func parseBook(ctx context.Context, fields []string) (entities.Book, error) {
 	}, nil
 }
 
-func ParseBooks(ctx context.Context, inp []byte) ([]entities.Book, error) {
-	log := logs.GetFromContext(ctx).With(zap.String("action", "parse_books"))
-	books := make([]entities.Book, 0)
-
-	scanner := bufio.NewScanner(bytes.NewReader(inp))
-	for scanner.Scan() {
-		line := scanner.Text()
-		fields := strings.Split(line, "\x04")
-		book, err := parseBook(ctx, fields)
-		if err != nil {
-			log.Error("error parsing book", zap.String("error", err.Error()))
-			continue
-		}
-		books = append(books, book)
-	}
-	return books, nil
-}
-
-func ParseBooksWithMetadata(ctx context.Context, inp []byte, metadata entities.BookMetadata) ([]entities.Book, error) {
+func ParseBooksWithMetadataInplace(ctx context.Context, inp []byte, metadata entities.BookMetadata, storage map[string]entities.Book) error {
 	log := logs.GetFromContext(ctx).With(zap.String("action", "parse_books_with_metadata"))
 	ctx = logs.WithLog(ctx, log)
 
-	books := make([]entities.Book, 0)
 	scanner := bufio.NewScanner(bytes.NewReader(inp))
+	count := 0
 	for scanner.Scan() {
 		line := scanner.Text()
 		fields := strings.Split(line, "\x04")
@@ -159,7 +142,9 @@ func ParseBooksWithMetadata(ctx context.Context, inp []byte, metadata entities.B
 			continue
 		}
 		book.Metadata = metadata
-		books = append(books, book)
+		storage[book.LibID] = book
+		count++
 	}
-	return books, nil
+	log.Debug("books parsed:", zap.Int("count", count))
+	return nil
 }

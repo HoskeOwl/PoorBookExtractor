@@ -10,13 +10,13 @@ import (
 )
 
 type MemoryStorage struct {
-	books    map[string]entities.Book
-	byAuthor map[string][]entities.Book
+	books    map[string]*entities.Book
+	byAuthor map[string][]*entities.Book
 }
 
-func NewMemoryStorage(books []entities.Book) *MemoryStorage {
-	booksMap := make(map[string]entities.Book)
-	byAuthor := make(map[string][]entities.Book)
+func NewMemoryStorage(books []*entities.Book) *MemoryStorage {
+	booksMap := make(map[string]*entities.Book)
+	byAuthor := make(map[string][]*entities.Book)
 	for _, book := range books {
 		for _, author := range book.Authors {
 			byAuthor[author] = append(byAuthor[author], book)
@@ -26,12 +26,10 @@ func NewMemoryStorage(books []entities.Book) *MemoryStorage {
 	return &MemoryStorage{books: booksMap, byAuthor: byAuthor}
 }
 
-func (ms *MemoryStorage) AddBooks(books []entities.Book) {
-	for _, book := range books {
-		ms.books[book.LibID] = book
-		for _, author := range book.Authors {
-			ms.byAuthor[author] = append(ms.byAuthor[author], book)
-		}
+func (ms *MemoryStorage) AddBook(book *entities.Book) {
+	ms.books[book.LibID] = book
+	for _, author := range book.Authors {
+		ms.byAuthor[author] = append(ms.byAuthor[author], book)
 	}
 }
 
@@ -59,12 +57,12 @@ func (ms *MemoryStorage) GetAuthors(value string) []string {
 	return authors
 }
 
-func (ms *MemoryStorage) GetAuthorBooks(author string) []entities.Book {
+func (ms *MemoryStorage) GetAuthorBooks(author string) []*entities.Book {
 	return ms.byAuthor[author]
 }
 
-func (ms *MemoryStorage) GetBooks(book_ids []string) []entities.Book {
-	books := make([]entities.Book, 0, len(book_ids))
+func (ms *MemoryStorage) GetBooks(book_ids []string) []*entities.Book {
+	books := make([]*entities.Book, 0, len(book_ids))
 	for _, bid := range book_ids {
 		book, ok := ms.books[bid]
 		if !ok {
@@ -76,12 +74,12 @@ func (ms *MemoryStorage) GetBooks(book_ids []string) []entities.Book {
 }
 
 func (ms *MemoryStorage) Clear() {
-	ms.books = make(map[string]entities.Book)
-	ms.byAuthor = make(map[string][]entities.Book)
+	ms.books = make(map[string]*entities.Book)
+	ms.byAuthor = make(map[string][]*entities.Book)
 }
 
-func (ms *MemoryStorage) IterBooksByAuthor() iter.Seq2[string, []entities.Book] {
-	return func(yield func(author string, book []entities.Book) bool) {
+func (ms *MemoryStorage) IterBooksByAuthor() iter.Seq2[string, []*entities.Book] {
+	return func(yield func(author string, book []*entities.Book) bool) {
 		authors := slices.Collect(maps.Keys(ms.byAuthor))
 		slices.Sort(authors)
 		for _, author := range authors {
@@ -101,7 +99,19 @@ func (ms *MemoryStorage) BooksLen() int {
 	return len(ms.books)
 }
 
-func (ms *MemoryStorage) GetBook(libID string) (entities.Book, bool) {
+func (ms *MemoryStorage) GetBook(libID string) (*entities.Book, bool) {
 	book, ok := ms.books[libID]
 	return book, ok
+}
+
+func (ms *MemoryStorage) IterByAuthors() iter.Seq[string] {
+	return func(yield func(author string) bool) {
+		authors := slices.Collect(maps.Keys(ms.byAuthor))
+		slices.Sort(authors)
+		for _, author := range authors {
+			if !yield(author) {
+				return
+			}
+		}
+	}
 }

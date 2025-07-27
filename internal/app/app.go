@@ -54,7 +54,9 @@ func (a *App) ParseInpx(path string) error {
 		return err
 	}
 	a.log.Debug("parsed books", zap.Int("count", len(books)))
-	a.storage.AddBooks(books)
+	for _, book := range books {
+		a.storage.AddBook(&book)
+	}
 	return nil
 }
 
@@ -62,7 +64,7 @@ func (a *App) GetAuthors(value string) []string {
 	return a.storage.GetAuthors(value)
 }
 
-func (a *App) GetAuthorBooks(author string) []entities.Book {
+func (a *App) GetAuthorBooks(author string) []*entities.Book {
 	return a.storage.GetAuthorBooks(author)
 }
 
@@ -74,17 +76,21 @@ func (a *App) ClearStorage() {
 	a.storage.Clear()
 }
 
-func (a *App) IterBooksByAuthor() iter.Seq2[string, []entities.Book] {
+func (a *App) IterBooksByAuthor() iter.Seq2[string, []*entities.Book] {
 	return a.storage.IterBooksByAuthor()
 }
 
-func (a *App) SortBooks(books []entities.Book) {
-	slices.SortFunc(books, func(a, b entities.Book) int {
+func (a *App) IterByAuthors() iter.Seq[string] {
+	return a.storage.IterByAuthors()
+}
+
+func (a *App) SortBooks(books []*entities.Book) {
+	slices.SortFunc(books, func(a, b *entities.Book) int {
 		return strings.Compare(a.FullName(), b.FullName())
 	})
 }
 
-func (a *App) Export(path string, books []entities.Book) error {
+func (a *App) Export(path string, books []*entities.Book) error {
 	if len(books) == 0 {
 		a.log.Debug("no books to export")
 		return nil
@@ -101,6 +107,6 @@ func (a *App) BooksLen() int {
 	return a.storage.BooksLen()
 }
 
-func (a *App) GetBook(libID string) (entities.Book, bool) {
+func (a *App) GetBook(libID string) (*entities.Book, bool) {
 	return a.storage.GetBook(libID)
 }
