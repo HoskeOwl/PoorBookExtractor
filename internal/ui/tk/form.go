@@ -21,9 +21,6 @@ type MainForm struct {
 	ResultList *TTreeviewWidget
 	Statusbar  *LabelWidget
 
-	Alphabet        *TFrameWidget
-	AlphabetButtons []*ButtonWidget
-
 	FindValue *Opt
 
 	app *app.App
@@ -45,9 +42,8 @@ func (impl *MainForm) CreateMenubar() {
 }
 
 func (impl *MainForm) CreateFind() *TFrameWidget {
-	grp := TFrame()
 	// find
-	fr := grp.TFrame()
+	fr := TFrame()
 	eVal := Textvariable("")
 	findInput := fr.TEntry(eVal)
 	Bind(findInput, "<Return>", Command(impl.findAuthor))
@@ -61,26 +57,7 @@ func (impl *MainForm) CreateFind() *TFrameWidget {
 	impl.FindInput = findInput
 	impl.FindValue = &eVal
 
-	alphabet := grp.TFrame()
-	impl.Alphabet = alphabet
-	btn := alphabet.Button(Txt("A"), Width(1), Height(1), Command(func() { impl.findAuthor() }))
-	Pack(btn, Side("left"), Expand(false), Fill("x"))
-
-	Pack(fr, Side("top"), Expand(false), Fill("x"))
-	Pack(alphabet, Side("bottom"), Expand(false), Fill("x"))
-
-	return grp
-}
-
-func (impl *MainForm) CreateAlphabetButtons(alphabet string) {
-	for _, btn := range impl.AlphabetButtons {
-		Destroy(btn)
-	}
-	for _, letter := range alphabet {
-		btn := impl.Alphabet.Button(Txt(string(letter)), Width(1), Height(1), Command(func() { impl.findAuthor() }))
-		Pack(btn, Side("left"), Expand(false), Fill("x"))
-		impl.AlphabetButtons = append(impl.AlphabetButtons, btn)
-	}
+	return fr
 }
 
 func (impl *MainForm) CreateAuthorList() *TFrameWidget {
@@ -100,6 +77,8 @@ func (impl *MainForm) CreateAuthorList() *TFrameWidget {
 	Pack(lv, Expand(true), Fill("both"))
 	sb.Configure(Command(func(e *Event) { e.Yview(lv) }))
 	impl.AuthorList = lv
+
+	Bind(lv, "<<TreeviewOpen>>", Command(impl.authorListOpen))
 
 	return fr
 }
@@ -129,7 +108,7 @@ func (impl *MainForm) CreateResultList() *TFrameWidget {
 	lv := fr.TTreeview(Selectmode("browse"), Height(30),
 		Yscrollcommand(func(e *Event) { e.ScrollSet(sb) }))
 
-	lv.Heading("#0", Txt("Books to exportk"), Anchor("center"))
+	lv.Heading("#0", Txt("Books to export"), Anchor("center"))
 	lv.Column("#0", Width(600), Stretch(true), Separator(false))
 	Pack(lv, Expand(true), Fill("both"))
 	sb.Configure(Command(func(e *Event) { e.Yview(lv) }))
