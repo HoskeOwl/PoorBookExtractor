@@ -37,6 +37,29 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Get version information from git
+get_git_tag() {
+    git describe --tags --abbrev=0 2>/dev/null || echo "unknown"
+}
+
+get_git_commit() {
+    git rev-parse HEAD 2>/dev/null || echo "unknown"
+}
+
+get_build_time() {
+    date -u '+%Y-%m-%d %H:%M:%S UTC'
+}
+
+VERSION=$(get_git_tag)
+COMMIT_SHA=$(get_git_commit)
+BUILD_TIME=$(get_build_time)
+
+echo "Build information:"
+echo "  Version: $VERSION"
+echo "  Commit: ${COMMIT_SHA:0:8}"
+echo "  Build Time: $BUILD_TIME"
+echo ""
+
 
 # Build matrix: GOOS GOARCH BINARY_NAME
 declare -a builds=(
@@ -98,8 +121,12 @@ for build in "${filtered_builds[@]}"; do
     # Clean output directory
     rm -f "$OUT_DIRECTORY/$BINARY_NAME"
     
-    # Build the binary
-    env GOOS=$GOOS GOARCH=$GOARCH go build -o "$OUT_DIRECTORY/$BINARY_NAME" main.go
+    # Build the binary with version information
+    env GOOS=$GOOS GOARCH=$GOARCH go build \
+        -ldflags "-X github.com/HoskeOwl/PoorBookExtractor/internal/version.Version=$VERSION \
+                  -X github.com/HoskeOwl/PoorBookExtractor/internal/version.CommitSHA=$COMMIT_SHA \
+                  -X github.com/HoskeOwl/PoorBookExtractor/internal/version.BuildTime='$BUILD_TIME'" \
+        -o "$OUT_DIRECTORY/$BINARY_NAME" main.go
     
     # Check if build was successful
     if [ $? -eq 0 ]; then

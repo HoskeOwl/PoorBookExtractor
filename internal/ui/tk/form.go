@@ -25,6 +25,8 @@ type MainForm struct {
 
 	app *app.App
 	log *zap.Logger
+
+	toplevel *ToplevelWidget
 }
 
 func (impl *MainForm) CreateMenubar() {
@@ -35,8 +37,11 @@ func (impl *MainForm) CreateMenubar() {
 	menubar.AddCommand(Lbl("Export"), Underline(2), Accelerator("Ctrl+E"), Command(impl.exportFiles))
 	Bind(App, "<Control-s>", Command(func() { menubar.Invoke(2) }))
 	menubar.AddSeparator()
+	menubar.AddCommand(Lbl("About"), Underline(0), Command(impl.showAbout))
+	Bind(App, "<Control-a>", Command(func() { menubar.Invoke(3) }))
+	menubar.AddSeparator()
 	menubar.AddCommand(Lbl("Exit"), Underline(1), Accelerator("Ctrl+Q"), ExitHandler())
-	Bind(App, "<Control-q>", Command(func() { menubar.Invoke(3) }))
+	Bind(App, "<Control-q>", Command(func() { menubar.Invoke(4) }))
 
 	impl.Menubar = menubar
 }

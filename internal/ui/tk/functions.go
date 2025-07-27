@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/HoskeOwl/PoorBookExtractor/internal/entities"
+	"github.com/HoskeOwl/PoorBookExtractor/internal/version"
 	"go.uber.org/zap"
 	. "modernc.org/tk9.0"
 	_ "modernc.org/tk9.0/themes/azure"
@@ -269,4 +270,35 @@ func (impl *MainForm) exportFiles() {
 	}
 	impl.log.Info("exported books", zap.Int("count", totalBooks))
 	impl.updateStatus(fmt.Sprintf("Exported %d books to %s", totalBooks, directory))
+}
+
+func (impl *MainForm) showAbout() {
+	if impl.toplevel != nil {
+		return
+	}
+	// Create About window
+	aboutWindow := Toplevel()
+	impl.toplevel = aboutWindow
+	aboutWindow.WmTitle("About PoorBookExtractor")
+	aboutWindow.Configure(Width("40c"), Height("12c"))
+
+	// Main frame
+	mainFrame := aboutWindow.TFrame()
+	Pack(mainFrame, Expand(true), Fill("both"), Padx("2m"), Pady("2m"))
+
+	// Title
+	titleLabel := mainFrame.Label(Txt("PoorBookExtractor"), Font("Arial 16 bold"))
+	Pack(titleLabel, Pady("1m"))
+
+	// Version info
+	versionText := fmt.Sprintf("Version: %s\nBuild Time: %s", version.GetFullVersion(), version.GetBuildTime())
+	versionLabel := mainFrame.Label(Txt(versionText), Justify("center"))
+	Pack(versionLabel, Pady("1m"))
+
+	// Close button
+	closeBtn := mainFrame.Button(Txt("Close"), Command(func() { Destroy(aboutWindow); impl.toplevel = nil }))
+	Pack(closeBtn, Pady("1m"))
+
+	// Center the window
+	aboutWindow.Center()
 }
