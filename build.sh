@@ -37,9 +37,6 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Clean and create output directory
-rm -rf $OUT_DIRECTORY
-mkdir -p $OUT_DIRECTORY
 
 # Build matrix: GOOS GOARCH BINARY_NAME
 declare -a builds=(
@@ -97,6 +94,9 @@ for build in "${filtered_builds[@]}"; do
     read -r GOOS GOARCH BINARY_NAME <<< "$build"
     
     echo "Building for $GOOS/$GOARCH -> $BINARY_NAME"
+
+    # Clean output directory
+    rm -f "$OUT_DIRECTORY/$BINARY_NAME"
     
     # Build the binary
     env GOOS=$GOOS GOARCH=$GOARCH go build -o "$OUT_DIRECTORY/$BINARY_NAME" main.go
